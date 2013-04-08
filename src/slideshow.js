@@ -10,7 +10,7 @@
 
 <table class="t1 slideshow_custom_transition" cellSpacing=0 cellPadding=0 border=0>
 	<tr>
-		<td class="inCmsCaptionCell"><div class="inCmsCaption">Слайд-шоу</div></td>
+		<td class="inCmsCaptionCell"><div class="inCmsCaption">Слайд-шоу с подключаемыми переходами</div></td>
 	</tr>
 	<tr>
 		<td class="slides_content">Слайды</td>
@@ -23,20 +23,12 @@ $(function() {
 $('.slideshow_custom_transition').SlideshowCustomTransition({
 	continuous	: true,
 	pause		: 4000,
-	autoplay	: true,
-	speed		: 1000,
-	markerEnabled: false,
-	switchButtonsEnabled: false,
-	transitions	: ['slideRight'],
-	transitionOptions : {
-		tileFadeIn : {
-			rows: 5,
-			cols: 10
-		}
-	}
-});
+	auto		: true,
+	speed		: 500,
+	transitions	: ['slideLeftAndNextFadeIn']
+})	
 	
-});
+})
 
 </script>
 		</td>
@@ -68,11 +60,8 @@ var SlideShowTransitions = {
 		$nextSlide.remove();
 		$slidesParent.append($nextSlide);
 		
-		//$curSlide.animate({opacity: 0}, duration);
-		$nextSlide.animate({opacity: 1}, duration, function() {
-			$curSlide.css({opacity: 0});
-			callback();
-		});
+		$curSlide.animate({opacity: 0}, duration);
+		$nextSlide.animate({opacity: 1}, duration, callback);
 		
 		return true;
 	},
@@ -210,8 +199,7 @@ var SlideShowTransitions = {
 			
 			var row = Math.floor(index/cols);
 			var col = index%cols;
-			//var delay = 5*(row + col);
-			var delay = 7 + (3*(row + col)/2);
+			var delay = 5*(row + col);
 			//var jQueryInterval = jQuery.fx.interval;
 			//jQuery.fx.interval = 40;
 			
@@ -335,16 +323,16 @@ var SlideShowTransitions = {
 		//SlideShowTransitions
 		var slideWidth = this.$curSlide.width();
 		var settings = {
-			animationProperties: {left: 0},
+			animationProperties: {left: "+="+slideWidth},
 			nextSlideCss: {
 				position: 'absolute',
-				left: 0,
+				left: -1*slideWidth,
 				top: 0,
 				opacity: 1
 			},
 			curSlideCss: {
 				position: 'absolute',
-				left: slideWidth,
+				left: 0,
 				top: 0,
 				opacity: 1
 			},
@@ -361,17 +349,17 @@ var SlideShowTransitions = {
 	slideDown: function(callback) {
 		var slideHeight = this.$curSlide.height();
 		var settings = {
-			animationProperties: {top: 0},
+			animationProperties: {top: "+="+slideHeight},
 			nextSlideCss: {
 				position: 'absolute',
 				left: 0,
-				top: 0,
+				top: -1*slideHeight,
 				opacity: 1
 			},
 			curSlideCss: {
 				position: 'absolute',
 				left: 0,
-				top: slideHeight,
+				top: 0,
 				opacity: 1
 			},
 			transitionContainerCss: {
@@ -394,16 +382,14 @@ var SlideShowTransitions = {
 		var $slidesParent = $curSlide.parent();
 		var slideWidth = $nextSlide.width();
 		var duration = this.speed;
-		var $container;
 		
-		if($('.slide_transition_container', $slidesParent).length > 0) return false;
+		if(!tryLock()) return false;
 		
-		buildTransitionLine();
+		$curSlide.css(settings.curSlideCss);
+		$nextSlide.css(settings.nextSlideCss).remove().appendTo($slidesParent);
 		
-		$container.appendTo($slidesParent);
-		$curSlide.css({opacity: 0});
-		$nextSlide.css({opacity: 0}).remove().appendTo($slidesParent);
-		$container.animate(
+		// Opera feels better with a little delay between dom manipulation and animation
+		$curSlide.add($nextSlide).delay(100).animate(
 			settings.animationProperties,
 			duration,
 			onComplete
@@ -411,23 +397,25 @@ var SlideShowTransitions = {
 		
 		return true;
 		
-		function onComplete() {
-			$nextSlide.css({opacity: 1});
-			$container.remove();
-			callback();
+		function tryLock() {
+			var isLocked = $slidesParent.data('slideshow-locked');
+			if(isLocked === true) {
+				return false;
+			}
+			
+			$slidesParent.data('slideshow-locked', true);
+			return true;
 		}
 		
-		function buildTransitionLine() {
-			var $nextSlideCopy = $nextSlide.clone();
-			var $curSlideCopy = $curSlide.clone();
-			
-			$nextSlideCopy.css(settings.nextSlideCss);
-				
-			$curSlideCopy.css(settings.curSlideCss);
-			$container = $('<div class="slide_transition_container"></div>')
-				.css(settings.transitionContainerCss)
-				.append($nextSlideCopy)
-				.append($curSlideCopy);
+		function unlock() {
+			$slidesParent.data('slideshow-locked', false);
+			return true;
+		}
+		
+		function onComplete() {
+			$nextSlide.css({opacity: 1});
+			callback();
+			unlock();
 		}
 	}
 };
@@ -547,6 +535,7 @@ var SlideShowTransitions = {
 					var $slide = $('<div class="slide-'+index+' slide">')
 					
 					$table.css('width', 'auto');
+					$table.attr('cellSpacing', 0);
 					maxWidth = Math.max(maxWidth, $table.width());
 					maxHeight = Math.max(maxHeight, $table.height());
 					
@@ -558,7 +547,7 @@ var SlideShowTransitions = {
 						left: '0px',
 						opacity: 0
 					});
-					$table.attr('cellSpacing', 0);
+					
 					
 					$slide.append($table);
 					slides.push($slide);
@@ -568,14 +557,12 @@ var SlideShowTransitions = {
 				width = maxWidth;
 				height = maxHeight;
 				
-				$slides = $slideLineContainer.find('.slide');
-				//$slides = $(slides);
-				$slides.width(maxWidth).height(maxHeight);
+				$slides = $(slides);
+				$(slides).width(maxWidth).height(maxHeight);
 				$slidesSrcCell.width(maxWidth).height(maxHeight);
 				
-				$root.width(maxWidth).height(maxHeight);
-				//var markersAreaHeight = 40;
-				//$root.width(maxWidth).height(maxHeight + markersAreaHeight);
+				var markersAreaHeight = 40;
+				$root.width(maxWidth).height(maxHeight + markersAreaHeight);
 				//$slideLineContainer.append(slides);
 			}
 			
@@ -671,7 +658,6 @@ var SlideShowTransitions = {
 				initTransitionData();
 				transitionObjectData.nextIndex = index;
 				transitionObjectData.$nextSlide = $($slides[index]);
-				
 				var transitionObj = SlideShowTransitions[transition];
 				var success = transitionObj.call(transitionObjectData, onTransitionComplete);
 				
