@@ -201,6 +201,7 @@ var SlideShowTransitions = {
 		*/
 		var cellsTotal = cols * rows;
 		var lastCellIndex = cellsTotal - 1;
+		var time = 100;
 		$('.transition_grid_cell', $grid).each(function(index, el) {
 			var callback = null;
 			
@@ -215,6 +216,7 @@ var SlideShowTransitions = {
 			//var jQueryInterval = jQuery.fx.interval;
 			//jQuery.fx.interval = 40;
 			
+			/*
 			duration += delay;
 			$(el).animate(
 				{opacity: 1, width: cellWidth, height: cellHeight},
@@ -222,6 +224,23 @@ var SlideShowTransitions = {
 				//'easeOutQuad',
 				callback
 			);
+			*/
+			
+			time = (row + col)*100;
+			setTimeout(function() {
+				$(el).animate(
+					{
+						opacity: 1,
+						width: cellWidth,
+						height: cellHeight
+					},
+					duration,
+					//'easeOutQuad',
+					callback
+				);
+			}, time);
+			
+			//time += (row === col) ? col*100 : (row + col) * 100;
 			
 			/*
 			$(el).delay(delay).animate(
