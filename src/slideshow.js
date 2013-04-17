@@ -148,7 +148,49 @@ var SlideShowTransitions = {
 		return true;
 	},
 	
+	/*
+	 * Box transitions
+	 */
+	getBoxTransitionData: function() {
+		return {
+			cols: this.transitionOptions.cols,
+			rows: this.transitionOptions.rows,
+			cellWidth: Math.floor(this.width/this.transitionOptions.cols),
+			cellHeight: Math.floor(this.height/this.transitionOptions.rows)
+		};
+	},
+	
+	boxFadeIn: function(callback) {
+		this.boxTransitionData = this.boxTransitionData || SlideShowTransitions.getBoxTransitionData.call(this);
+		
+		var settings = {
+			animationProps: {
+				opacity: 1
+			},
+			cellCss: {
+				width: this.boxTransitionData.cellWidth,
+				height: this.boxTransitionData.cellHeight
+			}
+		};
+		
+		return SlideShowTransitions.box.call(this, callback, settings);
+	},
+	
 	tileFadeIn: function(callback) {
+		this.boxTransitionData = this.boxTransitionData || SlideShowTransitions.getBoxTransitionData.call(this);
+		var settings = {
+			animationProps: {
+				opacity: 1,
+				width: this.boxTransitionData.cellWidth,
+				height: this.boxTransitionData.cellHeight
+			},
+			cellCss: {}
+		};
+		
+		return SlideShowTransitions.box.call(this, callback, settings);
+	},
+	
+	box: function(callback, settings) {
 		var $slides = this.$slides;
 		var curIndex = this.curIndex;
 		var nextIndex = this.nextIndex;
@@ -180,10 +222,17 @@ var SlideShowTransitions = {
 		
 		$slidesParent.append($nextSlide);
 		
+		var transitionData = SlideShowTransitions.getBoxTransitionData.call(this);
+		var cols = transitionData.cols;
+		var rows = transitionData.rows;
+		var cellWidth = transitionData.cellWidth;
+		var cellHeight = transitionData.cellHeight;
+		
+		/*
 		var cols = this.transitionOptions.cols;//10;
 		var rows = this.transitionOptions.rows;//5;
 		var cellWidth = Math.floor(this.width/cols);
-		var cellHeight = Math.floor(this.height/rows);
+		var cellHeight = Math.floor(this.height/rows);*/
 		var data = this;
 		
 		
@@ -191,14 +240,6 @@ var SlideShowTransitions = {
 		initGrid();
 		
 		$slidesParent.append($grid).append($nextSlide);
-		/*
-		$('.transition_grid_cell', $grid).animate(
-			{opacity: 1, width: cellWidth, height: cellHeight},
-			duration*2,
-			'easeOutQuad',
-			onTransitionComplete
-		);
-		*/
 		var cellsTotal = cols * rows;
 		var lastCellIndex = cellsTotal - 1;
 		var time = 100;
@@ -211,46 +252,16 @@ var SlideShowTransitions = {
 			
 			var row = Math.floor(index/cols);
 			var col = index%cols;
-			//var delay = 5*(row + col);
-			var delay = 7 + (3*(row + col)/2);
-			//var jQueryInterval = jQuery.fx.interval;
-			//jQuery.fx.interval = 40;
-			
-			/*
-			duration += delay;
-			$(el).animate(
-				{opacity: 1, width: cellWidth, height: cellHeight},
-				duration,
-				//'easeOutQuad',
-				callback
-			);
-			*/
 			
 			time = (row + col)*100;
 			setTimeout(function() {
 				$(el).animate(
-					{
-						opacity: 1,
-						width: cellWidth,
-						height: cellHeight
-					},
+					settings.animationProps,
 					duration,
 					//'easeOutQuad',
 					callback
 				);
 			}, time);
-			
-			//time += (row === col) ? col*100 : (row + col) * 100;
-			
-			/*
-			$(el).delay(delay).animate(
-				{opacity: 1, width: cellWidth, height: cellHeight},
-				duration*2,
-				//'easeOutQuad',
-				callback
-			);
-			*/
-			//jQuery.fx.interval = jQueryInterval;
 		})
 		
 		
@@ -281,6 +292,8 @@ var SlideShowTransitions = {
 						opacity: 0,
 						overflow: 'hidden'
 					};
+					cellStyle = $.extend(cellStyle, settings.cellCss);
+					
 					var $cell = $('<div class="transition_grid_cell">').css(cellStyle);
 					var nextImgSrc = $nextSlide.find('img').attr('src');
 					
@@ -291,67 +304,18 @@ var SlideShowTransitions = {
 						backgroundRepeat: 'no-repeat'
 					});
 					$grid.append($cell);
-					/*var cellOffsetBlockStyle = {
-						position: 'absolute',
-						left: -1*c*cellWidth,
-						top: -1*r*cellHeight
-					}
-					var $cellOffsetBlock = $('<div class="transition_grid_offset_cell">').css(cellOffsetBlockStyle);
-					
-					$slideCopy = $nextSlide.clone();
-					$slideCopy.css({opacity: 1});
-					$cellOffsetBlock.append($slideCopy);
-					$cell.append($cellOffsetBlock);
-					$grid.append($cell);*/
 				}
 			}
 		}
 		
-		/*function initGrid() {
-			$grid = $('<div class="transition_grid">').css({
-				position: 'absolute',
-				left: 0,
-				top: 0,
-				width: data.width,
-				height: data.height
-			});
-			
-			
-			for(var r = 0; r < rows; r++) {
-				for(var c = 0; c < cols; c++) {
-					var cellStyle = {
-						position: 'absolute',
-						left: c*cellWidth,
-						top: r*cellHeight,
-						width: 1,
-						height: 1,
-						opacity: 0,
-						overflow: 'hidden'
-					};
-					var $cell = $('<div class="transition_grid_cell">').css(cellStyle);
-					
-					
-					var cellOffsetBlockStyle = {
-						position: 'absolute',
-						left: -1*c*cellWidth,
-						top: -1*r*cellHeight
-					}
-					var $cellOffsetBlock = $('<div class="transition_grid_offset_cell">').css(cellOffsetBlockStyle);
-					
-					$slideCopy = $nextSlide.clone();
-					$slideCopy.css({opacity: 1});
-					$cellOffsetBlock.append($slideCopy);
-					$cell.append($cellOffsetBlock);
-					$grid.append($cell);
-				}
-			}
-		}*/
 		
 		return true;
 	},
 	
+	/*
+	 * Slide transitions
+	 */
 	slideRight: function(callback) {
-		//SlideShowTransitions
 		var slideWidth = this.$curSlide.width();
 		var settings = {
 			animationProperties: {left: 0},
@@ -450,7 +414,7 @@ var SlideShowTransitions = {
 		}
 	}
 };
-
+//SlideShowTransitions.boxFadeIn = SlideShowTransitions.tileFadeIn;
 
 (function($) {
 
@@ -466,10 +430,11 @@ var SlideShowTransitions = {
 			pause		: 4000,
 			autoplay	: true,
 			speed		: 500,
+			preload		: false,
+			width		: 390,
+			height		: 200,
 			markerEnabled: false,
 			switchButtonsEnabled: false,
-			/*width		: 390,
-			height		: 200,*/
 			transitions	: ['fadeIn'],
 			transitionOptions : {
 				tileFadeIn : {
@@ -495,11 +460,11 @@ var SlideShowTransitions = {
 			var transitionOptions = options.transitionOptions[firstTransitionName] || {};
 			//var $root
 			
-			
-			
+			var isLoading = false;
+			var imageSrcList = [];
 			var slides = [];
 			var $slides = null;
-			var curIndex = 0;
+			var curIndex = -1;
 			
 			var $root;
 			var $slideLineContainer;
@@ -525,7 +490,15 @@ var SlideShowTransitions = {
 			
 			function init() {
 				initContainers();
-				initSlides();
+				
+				if(options.preload) {
+					initPreloadSlides();
+				}
+				else {
+					initSlides();
+				}
+				
+				
 				initTransitionData();
 				
 				if(options.markerEnabled === true) {
@@ -540,6 +513,9 @@ var SlideShowTransitions = {
 				
 
 				show();
+				if(options.preload) {
+					showSlide(0);
+				}
 				startAutoplay();
 			}
 			
@@ -553,6 +529,38 @@ var SlideShowTransitions = {
 					});
 					
 				$root.append($slideLineContainer);
+			}
+			
+			function initPreloadSlides() {
+				var $imageSrc = $('.slides_content li', $this);
+				width = options.width;
+				height = options.height;
+				
+				$imageSrc.each(function(index, el) {
+					var $el = $(el);
+					var src = $el.text();
+					imageSrcList.push(src);
+					
+					
+					var $slide = $('<div class="slide-'+index+' slide"><img></div>')
+										
+					$slide.css({
+						position: 'absolute',
+						top: '0px',
+						left: '0px',
+						opacity: 0,
+						width: options.width,
+						height: options.height
+					});
+					
+					slides.push($slide);
+					$slideLineContainer.append($slide);
+				});
+				
+				$slides = $slideLineContainer.find('.slide');
+				$slidesSrcCell.width(options.width).height(options.height);
+				$root.width(options.width).height(options.height);
+				//$slideLineContainer.width(options.width).height(options.height);
 			}
 			
 			function initSlides() {
@@ -684,7 +692,13 @@ var SlideShowTransitions = {
 				//if(isBusy) return false;
 				if(index == curIndex) return false;
 				
-				//isBusy = true;
+				if(isLoading) return false;
+				
+				if(needsPreload(index)) {
+					preloadAndShow(index);
+					return false;
+				}
+				
 				stopAutoPlay();
 				
 				initTransitionData();
@@ -701,6 +715,24 @@ var SlideShowTransitions = {
 						updateMarker();
 					}
 				}
+			}
+			
+			function preloadAndShow(index) {
+				var src = imageSrcList[index];
+				var $img = $($slides[index]).find('img');
+				
+				$img.load(function() {
+					isLoading = false;
+					$img.width($img.width()).height($img.height());
+					showSlide(index);
+				}).attr('src', src);
+			}
+			
+			function needsPreload(index) {
+				if(!options.preload) return false;
+				
+				var src = $($slides[index]).find('img').attr('src');
+				return !src;
 			}
 			
 			function onTransitionComplete() {
